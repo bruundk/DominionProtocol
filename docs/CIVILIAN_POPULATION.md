@@ -1,5 +1,9 @@
 # Civilian population foundation
 
+This describes the original PR #1 foundation. For the subsequent growth and
+income rules, see [Civilian economy](CIVILIAN_ECONOMY.md). The no-growth/no-income
+statements below refer to the foundation version, not the economy follow-up.
+
 Every player (human, nation and bot) starts with **1,000 civilians**. This is
 a deterministic placeholder defined by `STARTING_CIVILIANS` in
 `src/core/game/Population.ts`, not a balance decision for the future economy.

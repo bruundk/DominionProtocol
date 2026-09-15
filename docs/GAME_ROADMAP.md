@@ -52,6 +52,17 @@ The final game name has not yet been decided.
 See [civilian foundation notes](CIVILIAN_POPULATION.md). This milestone does not
 yet implement total-population accounting, mobilisation, growth or income effects.
 
+### Civilian economy milestone
+
+- [x] Add deterministic civilian growth and land/completed-city capacity
+- [x] Make passive worker income proportional to civilians
+- [x] Preserve civilians when capacity falls, pausing growth instead
+- [x] Show capacity and growth in the compact HUD badge tooltip
+- [x] Test growth, income, synchronization and troop independence
+
+See [civilian economy rules](CIVILIAN_ECONOMY.md). Army/civilian conversion,
+total-population accounting and new buildings remain separate future milestones.
+
 ### Confirmed design
 
 - [ ] Add one total population value for each player

@@ -49,6 +49,10 @@ export class ControlPanel extends LitElement implements Controller {
 
   @state()
   private _civilians: number = 0;
+  @state()
+  private _civilianCapacity: number = 0;
+  @state()
+  private _civilianGrowth: number = 0;
 
   @state()
   private _isVisible = false;
@@ -142,6 +146,8 @@ export class ControlPanel extends LitElement implements Controller {
     this._gold = player.gold();
     this._troops = player.troops();
     this._civilians = player.civilians();
+    this._civilianCapacity = config.civilianCapacity(player);
+    this._civilianGrowth = config.civilianIncreaseRate(player) * 10;
     this._attackingTroops = player
       .outgoingAttacks()
       .map((a) => a.troops)
@@ -588,7 +594,12 @@ export class ControlPanel extends LitElement implements Controller {
   }
 
   private renderCivilianIndicator(compact: boolean = false) {
-    const label = translateText("control_panel.civilians");
+    const details = translateText("control_panel.civilian_details", {
+      label: translateText("control_panel.civilians"),
+      count: renderNumber(this._civilians),
+      capacity: renderNumber(this._civilianCapacity),
+      growth: renderNumber(this._civilianGrowth),
+    });
     return html`
       <div
         class="flex items-center justify-center gap-1 shrink-0 h-6 px-1 border rounded-md border-teal-300 text-teal-300 bg-gray-900/60 font-bold tabular-nums whitespace-nowrap ${compact
@@ -597,8 +608,8 @@ export class ControlPanel extends LitElement implements Controller {
         data-testid="civilian-count"
         role="group"
         tabindex="0"
-        title=${label}
-        aria-label=${`${label}: ${renderNumber(this._civilians)}`}
+        title=${details}
+        aria-label=${details}
       >
         <img
           src=${civilianIcon}

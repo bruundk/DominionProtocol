@@ -59,20 +59,15 @@ describe("civilian population foundation", () => {
     expect(player.civilians()).toBe(STARTING_CIVILIANS);
   });
 
-  it("does not change troop growth, capacity or worker income", () => {
+  it("does not change troop growth, capacity or grant gold when population changes", () => {
     const config = game.config();
-    const before = [
-      config.troopIncreaseRate(player),
-      config.maxTroops(player),
-      config.goldAdditionRate(player),
-    ];
+    const before = [config.troopIncreaseRate(player), config.maxTroops(player)];
     const troops = player.troops();
     const gold = player.gold();
     player.setCivilians(2000);
     expect([
       config.troopIncreaseRate(player),
       config.maxTroops(player),
-      config.goldAdditionRate(player),
     ]).toEqual(before);
     expect(player.troops()).toBe(troops);
     expect(player.gold()).toBe(gold);

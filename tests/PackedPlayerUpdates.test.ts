@@ -149,9 +149,12 @@ describe("GameRunner payload cadence", () => {
       alice.troops(),
       Number(alice.goldEarned()),
     ]);
-    // And the object channel no longer carries the stat fields: alice must
-    // not appear in this tick's PlayerUpdates for a gold-only change.
+    // The object channel no longer carries packed resource fields.
     const playerUpdates = gu.updates[GameUpdateType.Player];
-    expect(playerUpdates.find((u) => u.id === "alice_id")).toBeUndefined();
+    // Civilian growth travels in ordinary diffs, while resource lanes stay packed.
+    const civilianUpdate = playerUpdates.find((u) => u.id === "alice_id");
+    expect(civilianUpdate?.civilians).toBeGreaterThan(1000);
+    expect(civilianUpdate?.gold).toBeUndefined();
+    expect(civilianUpdate?.troops).toBeUndefined();
   });
 });

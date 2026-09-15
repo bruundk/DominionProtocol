@@ -19,6 +19,14 @@ import {
   UnitInfo,
   UnitType,
 } from "../game/Game";
+import {
+  CIVILIAN_GROWTH_DIVISOR,
+  CIVILIANS_PER_CITY_LEVEL,
+  CIVILIANS_PER_GOLD,
+  CIVILIANS_PER_TILE,
+  MAX_CIVILIAN_GROWTH_PER_TICK,
+  STARTING_CIVILIANS,
+} from "../game/Population";
 import { UserSettings } from "../game/UserSettings";
 import { GameConfig, TeamCountConfig } from "../Schemas";
 import { NukeType } from "../StatsSchemas";
@@ -1064,13 +1072,37 @@ export class Config {
 
   goldAdditionRate(player: Player | PlayerView): Gold {
     const multiplier = this.goldMultiplierFor(player);
-    let baseRate: bigint;
-    if (player.type() === PlayerType.Bot) {
-      baseRate = 50n;
-    } else {
-      baseRate = 100n;
-    }
+    // Preserve the existing bot income modifier and configured gold multiplier.
+    const divisor =
+      CIVILIANS_PER_GOLD * (player.type() === PlayerType.Bot ? 2 : 1);
+    const baseRate = BigInt(player.civilians()) / BigInt(divisor);
     return BigInt(Math.floor(Number(baseRate) * multiplier));
+  }
+
+  civilianCapacity(player: Player | PlayerView): number {
+    const cityLevels = player
+      .units(UnitType.City)
+      .filter((city) => !city.isUnderConstruction())
+      .reduce((sum, city) => sum + city.level(), 0);
+    return (
+      STARTING_CIVILIANS +
+      player.numTilesOwned() * CIVILIANS_PER_TILE +
+      cityLevels * CIVILIANS_PER_CITY_LEVEL
+    );
+  }
+
+  civilianIncreaseRate(player: Player | PlayerView): number {
+    // Integer ceiling keeps small populations growing without fractional state.
+    const gap =
+      BigInt(this.civilianCapacity(player)) - BigInt(player.civilians());
+    if (gap <= 0n || player.numTilesOwned() === 0) return 0;
+    const divisor = BigInt(CIVILIAN_GROWTH_DIVISOR);
+    const rate = (gap + divisor - 1n) / divisor;
+    return Number(
+      rate > BigInt(MAX_CIVILIAN_GROWTH_PER_TICK)
+        ? BigInt(MAX_CIVILIAN_GROWTH_PER_TICK)
+        : rate,
+    );
   }
 
   nukeMagnitudes(unitType: UnitType): NukeMagnitude {

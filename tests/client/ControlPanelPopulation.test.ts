@@ -16,7 +16,13 @@ vi.mock("../../src/client/Utils", async (importOriginal) => {
   const { default: english } = await import("../../resources/lang/en.json");
   return {
     ...original,
-    translateText: (key: string) => {
+    translateText: (key: string, params?: Record<string, string | number>) => {
+      if (key === "control_panel.civilian_details") {
+        return english.control_panel.civilian_details.replace(
+          /\{(\w+)\}/g,
+          (_, name) => String(params?.[name]),
+        );
+      }
       if (key === "control_panel.civilians")
         return english.control_panel.civilians;
       if (key === "control_panel.available_troops")
@@ -58,7 +64,9 @@ describe("control-panel population indicators", () => {
     expect(badges).toHaveLength(2);
     for (const badge of badges) {
       expect(badge.textContent?.trim()).toBe(renderNumber(1000));
-      expect(badge.getAttribute("title")).toBe(en.control_panel.civilians);
+      expect(badge.getAttribute("title")).toBe(
+        "Civilians: 1.00K / 1.00K capacity; growth: +0/s",
+      );
       expect(badge.getAttribute("aria-label")).toContain(
         en.control_panel.civilians,
       );
@@ -80,6 +88,18 @@ describe("control-panel population indicators", () => {
     ).toContain(renderNumber(1000));
     expect(bars[0].textContent).toContain(renderTroops(500));
 
+    panel.game.config = () =>
+      stubConfig({
+        maxTroops: () => 1000,
+        troopIncreaseRate: () => 1,
+        civilianCapacity: () => 2000,
+        civilianIncreaseRate: () => 1,
+      });
+    panel.tick();
+    await panel.updateComplete;
+    expect(badges[0].getAttribute("title")).toBe(
+      "Civilians: 1.00K / 2.00K capacity; growth: +10/s",
+    );
     player.applyUpdate({
       type: GameUpdateType.Player,
       id: player.id(),

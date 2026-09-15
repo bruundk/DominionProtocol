@@ -26,6 +26,7 @@ import { PlayerView } from "../../view/PlayerView";
 import { goldCoinIcon, soldierIcon } from "../HotbarIcons";
 import { TutorialHighlight, TutorialHighlightEvent } from "../Tutorial";
 const swordIcon = assetUrl("images/SwordIcon.svg");
+const civilianIcon = assetUrl("images/CivilianIcon.svg");
 
 @customElement("control-panel")
 export class ControlPanel extends LitElement implements Controller {
@@ -383,6 +384,11 @@ export class ControlPanel extends LitElement implements Controller {
     return html`
       <div
         class="w-full h-6 border border-gray-600 rounded-md bg-gray-900/60 overflow-hidden relative"
+        data-testid="available-troop-bar"
+        role="group"
+        tabindex="0"
+        title=${translateText("control_panel.available_troops")}
+        aria-label=${`${translateText("control_panel.available_troops")}: ${renderTroops(this._troops ?? 0)} / ${renderTroops(this._maxTroops ?? 0)}`}
       >
         <div class="relative h-full">
           <div
@@ -406,32 +412,6 @@ export class ControlPanel extends LitElement implements Controller {
             >${renderTroops(this._maxTroops)}</span
           >
         </div>
-        <div
-          class="absolute inset-0 flex items-center justify-center pointer-events-none"
-          translate="no"
-        >
-          <div
-            class="flex items-center gap-0.5 px-1 ${this.tutorialHighlightClass(
-              "troop_rate",
-            )}"
-          >
-            <img
-              src=${soldierIcon}
-              alt=""
-              aria-hidden="true"
-              width="12"
-              height="12"
-              class="brightness-0 invert drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
-            />
-            <span
-              class="text-[10px] font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] ${this
-                ._troopRateIsIncreasing
-                ? "text-green-400"
-                : "text-orange-400"}"
-              >+${renderTroops(this.troopRate)}/s</span
-            >
-          </div>
-        </div>
       </div>
     `;
   }
@@ -441,6 +421,11 @@ export class ControlPanel extends LitElement implements Controller {
     return html`
       <div
         class="w-full h-6 border border-gray-600 rounded-md bg-gray-900/60 overflow-hidden relative"
+        data-testid="available-troop-bar"
+        role="group"
+        tabindex="0"
+        title=${translateText("control_panel.available_troops")}
+        aria-label=${`${translateText("control_panel.available_troops")}: ${renderTroops(this._troops ?? 0)} / ${renderTroops(this._maxTroops ?? 0)}`}
       >
         <div class="relative h-full">
           <div
@@ -509,7 +494,7 @@ export class ControlPanel extends LitElement implements Controller {
   private renderDesktop() {
     return html`
       ${this.renderNotification()}
-      <!-- Row 1: troop rate | troop bar | gold -->
+      <!-- Row 1: troop rate | troop bar | civilians | gold -->
       <div class="flex gap-1.5 items-center mb-1">
         <!-- Troop rate -->
         <div
@@ -539,12 +524,13 @@ export class ControlPanel extends LitElement implements Controller {
           >
         </div>
         <!-- Troop bar -->
-        <div class="flex-1 ${this.tutorialHighlightClass("troops")}">
+        <div class="flex-1 min-w-0 ${this.tutorialHighlightClass("troops")}">
           ${this.renderDesktopTroopBar()}
         </div>
+        ${this.renderCivilianIndicator()}
         <!-- Gold -->
         <div
-          class="flex items-center gap-1 shrink-0 border rounded-md border-yellow-400 font-bold text-yellow-400 text-sm py-0.5 px-1 min-w-[4.5rem] relative ${this.tutorialHighlightClass(
+          class="flex items-center gap-1 shrink-0 border rounded-md border-yellow-400 font-bold text-yellow-400 text-sm py-0.5 px-1 min-w-[4.5rem] relative overflow-hidden ${this.tutorialHighlightClass(
             "gold",
           )}"
           translate="no"
@@ -553,7 +539,8 @@ export class ControlPanel extends LitElement implements Controller {
             ? keyed(
                 this._goldGainPulseId,
                 html`<span
-                  class="gold-gain-pop absolute -top-5 right-[5px] min-[1015px]:right-[9px] text-green-400 text-sm font-extrabold tabular-nums whitespace-nowrap pointer-events-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]"
+                  class="gold-gain-pop absolute inset-0 flex items-center justify-center px-1 bg-gray-900/95 text-green-400 text-sm font-extrabold tabular-nums whitespace-nowrap pointer-events-none"
+                  aria-hidden="true"
                   >+${renderNumber(this._goldGain)}</span
                 >`,
               )
@@ -600,13 +587,46 @@ export class ControlPanel extends LitElement implements Controller {
     `;
   }
 
+  private renderCivilianIndicator(compact: boolean = false) {
+    const label = translateText("control_panel.civilians");
+    return html`
+      <div
+        class="flex items-center justify-center gap-1 shrink-0 h-6 px-1 border rounded-md border-teal-300 text-teal-300 bg-gray-900/60 font-bold tabular-nums whitespace-nowrap ${compact
+          ? "text-xs"
+          : "text-sm"}"
+        data-testid="civilian-count"
+        role="group"
+        tabindex="0"
+        title=${label}
+        aria-label=${`${label}: ${renderNumber(this._civilians)}`}
+      >
+        <img
+          src=${civilianIcon}
+          alt=""
+          aria-hidden="true"
+          width="14"
+          height="14"
+          class="shrink-0"
+        />
+        <span translate="no">${renderNumber(this._civilians)}</span>
+      </div>
+    `;
+  }
+
   private renderMobile() {
     return html`
       ${this.renderNotification()}
-      <div class="flex gap-2 items-center">
+      <div
+        class="flex gap-1.5 items-center mb-1"
+        data-testid="mobile-resource-row"
+      >
+        ${this.renderCivilianIndicator(true)}
+        <div class="flex-1 min-w-0 ${this.tutorialHighlightClass("troops")}">
+          ${this.renderMobileTroopBar()}
+        </div>
         <!-- Gold -->
         <div
-          class="flex items-center justify-center p-1 gap-0.5 border rounded-md border-yellow-400 font-bold text-yellow-400 text-xs w-1/5 shrink-0 relative ${this.tutorialHighlightClass(
+          class="flex items-center justify-center h-6 px-1 gap-0.5 border rounded-md border-yellow-400 font-bold text-yellow-400 text-xs shrink-0 relative overflow-hidden ${this.tutorialHighlightClass(
             "gold",
           )}"
           translate="no"
@@ -615,7 +635,8 @@ export class ControlPanel extends LitElement implements Controller {
             ? keyed(
                 this._goldGainPulseId,
                 html`<span
-                  class="gold-gain-pop absolute -top-5 right-[5px] min-[1015px]:right-[9px] text-green-400 text-xs font-extrabold tabular-nums whitespace-nowrap pointer-events-none drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]"
+                  class="gold-gain-pop absolute inset-0 flex items-center justify-center px-1 bg-gray-900/95 text-green-400 text-xs font-extrabold tabular-nums whitespace-nowrap pointer-events-none"
+                  aria-hidden="true"
                   >+${renderNumber(this._goldGain)}</span
                 >`,
               )
@@ -623,13 +644,27 @@ export class ControlPanel extends LitElement implements Controller {
           <img src=${goldCoinIcon} width="13" height="13" />
           <span class="px-0.5">${renderNumber(this._gold)}</span>
         </div>
-        <!-- Troop bar -->
+      </div>
+      <div class="flex gap-2 items-center" data-testid="mobile-attack-row">
+        <!-- Growth is separate from the narrow troop bar so numbers don't collide. -->
         <div
-          class="w-[40%] shrink-0 flex items-center ${this.tutorialHighlightClass(
-            "troops",
+          class="flex items-center gap-1 shrink-0 h-6 px-1 border rounded-md text-xs font-bold tabular-nums ${this
+            ._troopRateIsIncreasing
+            ? "border-green-400 text-green-400"
+            : "border-orange-400 text-orange-400"} ${this.tutorialHighlightClass(
+            "troop_rate",
           )}"
+          translate="no"
         >
-          ${this.renderMobileTroopBar()}
+          <img
+            src=${soldierIcon}
+            alt=""
+            aria-hidden="true"
+            width="12"
+            height="12"
+            class="shrink-0 brightness-0 invert"
+          />
+          <span>+${renderTroops(this.troopRate)}/s</span>
         </div>
         <!-- Sword + % label -->
         <div
@@ -650,7 +685,7 @@ export class ControlPanel extends LitElement implements Controller {
         </div>
         <!-- Attack ratio slider -->
         <div
-          class="flex-1 ${this.tutorialHighlightClass("attack_ratio")}"
+          class="flex-1 min-w-0 ${this.tutorialHighlightClass("attack_ratio")}"
           translate="no"
         >
           <input
@@ -690,19 +725,6 @@ export class ControlPanel extends LitElement implements Controller {
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
-        <div
-          class="flex flex-wrap justify-between gap-x-3 gap-y-1 mb-1 text-xs tabular-nums"
-          data-testid="population-summary"
-        >
-          <span data-testid="civilian-count">
-            ${translateText("control_panel.civilians")}:
-            <span translate="no">${renderNumber(this._civilians)}</span>
-          </span>
-          <span data-testid="available-troop-count">
-            ${translateText("control_panel.available_troops")}:
-            <span translate="no">${renderTroops(this._troops ?? 0)}</span>
-          </span>
-        </div>
         <div class="lg:hidden">${this.renderMobile()}</div>
         <div class="hidden lg:block">${this.renderDesktop()}</div>
       </div>

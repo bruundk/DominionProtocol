@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <!-- Original civilian pictogram: two unarmed people, distinct from the soldier. -->
+  <circle cx="9" cy="6.5" r="3.5" fill="#5eead4" />
+  <path d="M2 20v-3a7 7 0 0 1 14 0v3H2Z" fill="#5eead4" />
+  <circle cx="18" cy="8" r="2.5" fill="#5eead4" opacity=".7" />
+  <path d="M18 13a5 5 0 0 1 5 5v2h-5v-3a8.9 8.9 0 0 0-.9-3.9l.9-.1Z" fill="#5eead4" opacity=".7" />
+</svg>

@@ -132,6 +132,7 @@ export function makePlayerUpdate(
     piracyGold: 0n,
     goldEarned: 0n,
     troops: 100,
+    civilians: 1000,
     allies: [],
     embargoes: new Set(),
     isTraitor: false,

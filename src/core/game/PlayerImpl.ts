@@ -56,6 +56,7 @@ import {
   GameUpdateType,
   PlayerUpdate,
 } from "./GameUpdates";
+import { STARTING_CIVILIANS } from "./Population";
 import { ReadonlyTileSet, TileSet } from "./TileSet";
 import {
   bumpTraversalGeneration,
@@ -118,6 +119,7 @@ export class PlayerImpl implements Player {
 
   private _gold: bigint;
   private _troops: bigint;
+  private _civilians: bigint = BigInt(STARTING_CIVILIANS);
 
   /** Cumulative ship-trade revenue (arrival credit for src + dst port owners). */
   private _tradeGold: bigint = 0n;
@@ -379,6 +381,7 @@ export class PlayerImpl implements Player {
       piracyGold: this._piracyGold,
       goldEarned: this._goldEarned,
       troops: this.troops(),
+      civilians: this.civilians(),
       allies: allies,
       embargoes: embargoes,
       isTraitor: this.isTraitor(),
@@ -1342,6 +1345,18 @@ export class PlayerImpl implements Player {
     return Number(this._troops);
   }
 
+  civilians(): number {
+    return Number(this._civilians);
+  }
+
+  /** Simulation-only setter; no player action or mobilisation is exposed yet. */
+  setCivilians(civilians: number): void {
+    if (!Number.isSafeInteger(civilians) || civilians < 0) {
+      throw new Error("Civilians must be a non-negative safe integer");
+    }
+    this._civilians = BigInt(civilians);
+  }
+
   addTroops(troops: number): void {
     if (troops < 0) {
       this.removeTroops(-1 * troops);
@@ -1828,6 +1843,8 @@ export class PlayerImpl implements Player {
   hash(): number {
     return (
       simpleHash(this.id()) * (this.troops() + this.numTilesOwned()) +
+      // Preserve existing replay hashes at the placeholder starting count.
+      simpleHash(this.id()) * (this.civilians() - STARTING_CIVILIANS) +
       this._units.reduce((acc, unit) => acc + unit.hash(), 0)
     );
   }

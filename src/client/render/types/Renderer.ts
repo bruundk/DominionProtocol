@@ -75,6 +75,8 @@ export interface PlayerState {
   /** Cumulative gold received from all sources (live). */
   goldEarned: number;
   troops: number;
+  /** Optional for older renderer snapshots; new engine snapshots supply it. */
+  civilians?: number;
   isTraitor: boolean;
   traitorRemainingTicks: number;
   inDoomsdayClock: boolean;

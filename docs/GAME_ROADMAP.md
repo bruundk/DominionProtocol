@@ -42,6 +42,16 @@ The final game name has not yet been decided.
 
 ## Phase 2: Population and army system
 
+### Foundation milestone
+
+- [x] Add independent player-wide civilian state (1,000 starting civilians)
+- [x] Synchronize initial state and subsequent civilian changes
+- [x] Display Civilians and Available Troops in the English HUD
+- [x] Test civilian state, synchronization and HUD updates
+
+See [civilian foundation notes](CIVILIAN_POPULATION.md). This milestone does not
+yet implement total-population accounting, mobilisation, growth or income effects.
+
 ### Confirmed design
 
 - [ ] Add one total population value for each player

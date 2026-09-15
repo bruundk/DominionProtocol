@@ -47,6 +47,9 @@ export class ControlPanel extends LitElement implements Controller {
   private _troops: number;
 
   @state()
+  private _civilians: number = 0;
+
+  @state()
   private _isVisible = false;
 
   @state()
@@ -137,6 +140,7 @@ export class ControlPanel extends LitElement implements Controller {
     this._maxTroops = config.maxTroops(player);
     this._gold = player.gold();
     this._troops = player.troops();
+    this._civilians = player.civilians();
     this._attackingTroops = player
       .outgoingAttacks()
       .map((a) => a.troops)
@@ -686,6 +690,19 @@ export class ControlPanel extends LitElement implements Controller {
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
+        <div
+          class="flex flex-wrap justify-between gap-x-3 gap-y-1 mb-1 text-xs tabular-nums"
+          data-testid="population-summary"
+        >
+          <span data-testid="civilian-count">
+            ${translateText("control_panel.civilians")}:
+            <span translate="no">${renderNumber(this._civilians)}</span>
+          </span>
+          <span data-testid="available-troop-count">
+            ${translateText("control_panel.available_troops")}:
+            <span translate="no">${renderTroops(this._troops ?? 0)}</span>
+          </span>
+        </div>
         <div class="lg:hidden">${this.renderMobile()}</div>
         <div class="hidden lg:block">${this.renderDesktop()}</div>
       </div>

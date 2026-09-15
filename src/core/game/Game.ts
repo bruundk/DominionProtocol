@@ -655,6 +655,9 @@ export interface Player {
   // piracy, conquest, donations). Incremented inside addGold(); surfaced on
   // the live PlayerUpdate for the leaderboard "Gold Income/min" column.
   goldEarned(): Gold;
+  /** Player-wide non-military population, independent of deployed troops. */
+  civilians(): number;
+  setCivilians(civilians: number): void;
   troops(): number;
   setTroops(troops: number): void;
   addTroops(troops: number): void;

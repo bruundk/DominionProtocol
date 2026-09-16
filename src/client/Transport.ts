@@ -250,6 +250,10 @@ export class Transport {
 
   private pingInterval: number | null = null;
   private reconnectTimeout: number | null = null;
+  // Chrome can heavily throttle timers while a tab is hidden. Do not spend
+  // the reconnect budget there: remember the request and resume it when the
+  // game becomes visible again.
+  private reconnectWhenVisible = false;
   // Consecutive retries that have not yet produced a server frame.
   private reconnectAttempts = 0;
   public readonly isLocal: boolean;
@@ -588,8 +592,26 @@ export class Transport {
     this.scheduleReconnect();
   }
 
+  /**
+   * Resume a reconnect that was deliberately deferred while the page was
+   * hidden. ClientGameRunner calls this on visibility restoration before its
+   * silence watchdog checks whether the current socket has gone stale.
+   */
+  public resumeAfterBackground() {
+    if (this.isLocal || this.connectionRefused || !this.reconnectWhenVisible) {
+      return;
+    }
+    this.reconnectWhenVisible = false;
+    this.reconnectAttempts = 0;
+    this.scheduleReconnect();
+  }
+
   private scheduleReconnect() {
     if (this.connectionRefused || this.reconnectTimeout !== null) {
+      return;
+    }
+    if (document.hidden) {
+      this.reconnectWhenVisible = true;
       return;
     }
     // An attempt is already in flight; let it succeed or fail on its own.
@@ -612,6 +634,10 @@ export class Transport {
     );
     this.reconnectTimeout = window.setTimeout(() => {
       this.reconnectTimeout = null;
+      if (document.hidden) {
+        this.reconnectWhenVisible = true;
+        return;
+      }
       this.connectRemote(this.onconnect, this.onmessage);
     }, delay);
   }

@@ -67,6 +67,7 @@ import {
   Transport,
 } from "./Transport";
 import { createCanvas } from "./Utils";
+import { startVisibilityFrameLoop } from "./VisibilityFrameLoop";
 import { WebGLFrameBuilder } from "./WebGLFrameBuilder";
 import { MapLayerController } from "./controllers/MapLayerController";
 import { createRenderer, GameRenderer } from "./hud/GameRenderer";
@@ -599,22 +600,14 @@ function mountWebGLFrameLoop(
   // TransformHandler, pushes it to WebGL, and synchronously invokes the
   // renderer's captured frame callback (which draws). One RAF = one
   // synchronized camera-update + WebGL render.
-  let rafId: number | null = null;
-  const driveFrame = (): void => {
-    syncCamera();
-    rafId = requestAnimationFrame(driveFrame);
-  };
-  rafId = requestAnimationFrame(driveFrame);
+  const stopVisibilityFrameLoop = startVisibilityFrameLoop(syncCamera);
 
   // Tear down the per-frame loop so a stopped game stops driving WebGL and
   // releases the view for disposal. Left running, the RAF keeps the WebGL
   // context referenced (and alive) forever — each new game would then stack
   // another context until the browser's limit is hit.
   const stopFrameLoop = (): void => {
-    if (rafId !== null) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
-    }
+    stopVisibilityFrameLoop();
     resizeObs.disconnect();
   };
 
@@ -895,6 +888,15 @@ export class ClientGameRunner {
   private lastTickReceiveTime: number = 0;
   private currentTickDelay: number | undefined = undefined;
 
+  private readonly onVisibilityChange = (): void => {
+    if (document.hidden || !this.isActive) return;
+    this.transport.resumeAfterBackground();
+    // Run the silence check immediately rather than waiting for the next
+    // interval. If Chrome kept a stale OPEN socket, reconnect and rejoin from
+    // turnsSeen now; short background visits keep their healthy connection.
+    this.onConnectionCheck();
+  };
+
   constructor(
     private lobby: LobbyConfig,
     private clientID: ClientID | undefined,
@@ -934,6 +936,8 @@ export class ClientGameRunner {
 
     this.isActive = true;
     this.lastMessageTime = Date.now();
+    document.addEventListener("visibilitychange", this.onVisibilityChange);
+    window.addEventListener("pageshow", this.onVisibilityChange);
     setTimeout(() => {
       this.connectionCheckInterval = setInterval(
         () => this.onConnectionCheck(),
@@ -1140,6 +1144,8 @@ export class ClientGameRunner {
     if (!this.isActive) return;
 
     this.isActive = false;
+    document.removeEventListener("visibilitychange", this.onVisibilityChange);
+    window.removeEventListener("pageshow", this.onVisibilityChange);
     this.worker.cleanup();
     this.transport.leaveGame();
     if (this.connectionCheckInterval) {

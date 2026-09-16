@@ -120,6 +120,7 @@ export class PlayerImpl implements Player {
   private _gold: bigint;
   private _troops: bigint;
   private _civilians: bigint = BigInt(STARTING_CIVILIANS);
+  private _mobilisationPercentage = 50;
 
   /** Cumulative ship-trade revenue (arrival credit for src + dst port owners). */
   private _tradeGold: bigint = 0n;
@@ -198,6 +199,8 @@ export class PlayerImpl implements Player {
     private readonly _team: Team | null,
   ) {
     this._troops = toInt(startTroops);
+    this._mobilisationPercentage =
+      playerInfo.playerType === PlayerType.Human ? 50 : 55;
     this._gold = mg.config().startingGold(playerInfo);
     this._pseudo_random = new PseudoRandom(simpleHash(this.playerInfo.id));
   }
@@ -382,6 +385,9 @@ export class PlayerImpl implements Player {
       goldEarned: this._goldEarned,
       troops: this.troops(),
       civilians: this.civilians(),
+      totalPopulation: this.totalPopulation(),
+      deployedTroops: this.deployedTroops(),
+      mobilisationPercentage: this.mobilisationPercentage(),
       allies: allies,
       embargoes: embargoes,
       isTraitor: this.isTraitor(),
@@ -1349,12 +1355,56 @@ export class PlayerImpl implements Player {
     return Number(this._civilians);
   }
 
-  /** Simulation-only setter; no player action or mobilisation is exposed yet. */
+  /** Simulation-only setter. Player choices use a validated mobilisation intent. */
   setCivilians(civilians: number): void {
     if (!Number.isSafeInteger(civilians) || civilians < 0) {
       throw new Error("Civilians must be a non-negative safe integer");
     }
     this._civilians = BigInt(civilians);
+  }
+
+  deployedTroops(): number {
+    const attacks = this.outgoingAttacks().reduce(
+      (sum, attack) => sum + attack.troops(),
+      0,
+    );
+    const ships = this.units(UnitType.TransportShip).reduce(
+      (sum, ship) => sum + ship.troops(),
+      0,
+    );
+    return Number(toInt(Math.max(0, attacks + ships)));
+  }
+
+  totalPopulation(): number {
+    return Number(this._civilians + this._troops) + this.deployedTroops();
+  }
+
+  mobilisationPercentage(): number {
+    return this._mobilisationPercentage;
+  }
+
+  setMobilisationPercentage(percentage: number): void {
+    if (!Number.isInteger(percentage) || percentage < 0 || percentage > 100) {
+      throw new Error("Mobilisation must be an integer from 0 to 100");
+    }
+    this._mobilisationPercentage = percentage;
+    this.reconcileMobilisation();
+  }
+
+  reconcileMobilisation(): void {
+    const deployed = BigInt(this.deployedTroops());
+    const free = this._civilians + this._troops;
+    const desiredSoldiers =
+      ((free + deployed) * BigInt(this._mobilisationPercentage)) / 100n;
+    const capacity = toInt(this.mg.config().maxTroops(this));
+    const capacityRoom = capacity > deployed ? capacity - deployed : 0n;
+    // Existing over-capacity reserves are retained but no conversion can add
+    // beyond the normal army cap.
+    const room = capacityRoom > this._troops ? capacityRoom : this._troops;
+    const reserveTarget =
+      desiredSoldiers > deployed ? desiredSoldiers - deployed : 0n;
+    this._troops = minInt(free, minInt(room, reserveTarget));
+    this._civilians = free - this._troops;
   }
 
   addTroops(troops: number): void {
@@ -1843,8 +1893,9 @@ export class PlayerImpl implements Player {
   hash(): number {
     return (
       simpleHash(this.id()) * (this.troops() + this.numTilesOwned()) +
-      // Preserve existing replay hashes at the placeholder starting count.
-      simpleHash(this.id()) * (this.civilians() - STARTING_CIVILIANS) +
+      simpleHash(`civilian:${this.id()}`) *
+        (this.civilians() - STARTING_CIVILIANS) +
+      simpleHash(`mobilisation:${this.id()}`) * this.mobilisationPercentage() +
       this._units.reduce((acc, unit) => acc + unit.hash(), 0)
     );
   }

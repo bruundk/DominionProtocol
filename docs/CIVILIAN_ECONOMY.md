@@ -1,5 +1,9 @@
 # Civilian growth and income
 
+> Mobilisation now extends this foundation. Growth and capacity use total
+> population, while the civilian-income formula remains unchanged. See
+> [MOBILISATION.md](MOBILISATION.md).
+
 This first economy pass uses the existing player-wide civilian state and shared
 army. It adds no mobilisation, resources, buildings or combat changes. PR #1 was
 merged before this branch started.

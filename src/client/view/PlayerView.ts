@@ -87,6 +87,10 @@ function stateFromUpdate(pu: PlayerUpdate): PlayerState {
     goldEarned: Number(pu.goldEarned ?? 0n),
     troops: pu.troops!,
     civilians: pu.civilians ?? 0,
+    totalPopulation:
+      pu.totalPopulation ?? (pu.civilians ?? 0) + (pu.troops ?? 0),
+    deployedTroops: pu.deployedTroops ?? 0,
+    mobilisationPercentage: pu.mobilisationPercentage ?? 50,
     isTraitor: pu.isTraitor!,
     traitorRemainingTicks: Math.max(0, pu.traitorRemainingTicks ?? 0),
     inDoomsdayClock: pu.inDoomsdayClock ?? false,
@@ -540,6 +544,21 @@ export class PlayerView {
 
   civilians(): number {
     return this.state.civilians ?? 0;
+  }
+
+  totalPopulation(): number {
+    return (
+      this.state.totalPopulation ??
+      this.civilians() + this.troops() + this.deployedTroops()
+    );
+  }
+
+  deployedTroops(): number {
+    return this.state.deployedTroops ?? 0;
+  }
+
+  mobilisationPercentage(): number {
+    return this.state.mobilisationPercentage ?? 50;
   }
 
   totalUnitLevels(type: UnitType): number {

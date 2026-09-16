@@ -1086,6 +1086,7 @@ export class Config {
       .reduce((sum, city) => sum + city.level(), 0);
     return (
       STARTING_CIVILIANS +
+      this.startManpower(new PlayerInfo("", player.type(), null, "")) +
       player.numTilesOwned() * CIVILIANS_PER_TILE +
       cityLevels * CIVILIANS_PER_CITY_LEVEL
     );
@@ -1094,7 +1095,7 @@ export class Config {
   civilianIncreaseRate(player: Player | PlayerView): number {
     // Integer ceiling keeps small populations growing without fractional state.
     const gap =
-      BigInt(this.civilianCapacity(player)) - BigInt(player.civilians());
+      BigInt(this.civilianCapacity(player)) - BigInt(player.totalPopulation());
     if (gap <= 0n || player.numTilesOwned() === 0) return 0;
     const divisor = BigInt(CIVILIAN_GROWTH_DIVISOR);
     const rate = (gap + divisor - 1n) / divisor;

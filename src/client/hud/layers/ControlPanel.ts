@@ -14,6 +14,7 @@ import {
 } from "../../../core/game/UserSettings";
 import { Controller } from "../../Controller";
 import { AttackRatioEvent } from "../../InputHandler";
+import { SendMobilisationIntentEvent } from "../../Transport";
 import { UIState } from "../../UIState";
 import {
   getGamesPlayed,
@@ -53,6 +54,16 @@ export class ControlPanel extends LitElement implements Controller {
   private _civilianCapacity: number = 0;
   @state()
   private _civilianGrowth: number = 0;
+  @state()
+  private _mobilisation = 50;
+  @state()
+  private _actualMobilisation = 0;
+  @state()
+  private _population = 0;
+  @state()
+  private _deployedTroops = 0;
+  @state()
+  private _draftMobilisation: number | null = null;
 
   @state()
   private _isVisible = false;
@@ -148,11 +159,20 @@ export class ControlPanel extends LitElement implements Controller {
     this._civilians = player.civilians();
     this._civilianCapacity = config.civilianCapacity(player);
     this._civilianGrowth = config.civilianIncreaseRate(player) * 10;
-    this._attackingTroops = player
-      .outgoingAttacks()
-      .map((a) => a.troops)
-      .reduce((a, b) => a + b, 0);
-    this.troopRate = config.troopIncreaseRate(player) * 10;
+    this._deployedTroops = player.deployedTroops();
+    this._attackingTroops = this._deployedTroops;
+    this._mobilisation = player.mobilisationPercentage();
+    this._population = player.totalPopulation();
+    this._actualMobilisation =
+      this._population === 0
+        ? 0
+        : Math.floor(
+            ((this._troops + this._deployedTroops) * 100) / this._population,
+          );
+    if (this._draftMobilisation === this._mobilisation) {
+      this._draftMobilisation = null;
+    }
+    this.troopRate = this._civilianGrowth;
 
     const helpEnabled = new UserSettings().helpMessages();
 
@@ -369,6 +389,69 @@ export class ControlPanel extends LitElement implements Controller {
 
   private handleRatioSliderPointerUp(e: Event) {
     (e.target as HTMLInputElement).blur();
+  }
+
+  private renderMobilisation() {
+    const target = this._draftMobilisation ?? this._mobilisation;
+    const details = translateText("control_panel.mobilisation_details", {
+      target,
+      actual: this._actualMobilisation,
+      population: renderNumber(this._population),
+      civilians: renderNumber(this._civilians),
+      available: renderTroops(this._troops),
+      deployed: renderTroops(this._deployedTroops),
+    });
+    return html`
+      <div
+        class="mt-1 px-1 py-1 border border-teal-300/70 rounded-md bg-gray-900/50"
+        data-testid="mobilisation-controls"
+        title=${details}
+      >
+        <div
+          class="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs"
+        >
+          <span class="font-semibold text-teal-200"
+            >${translateText("control_panel.mobilisation")}</span
+          >
+          <span class="tabular-nums text-white" translate="no"
+            >${translateText("control_panel.mobilisation_split", {
+              target,
+              actual: this._actualMobilisation,
+            })}</span
+          >
+          <span
+            class="shrink-0 px-1 border border-gray-600 rounded text-gray-200 tabular-nums"
+            >${translateText("control_panel.deployed_soldiers", {
+              count: renderTroops(this._deployedTroops),
+            })}</span
+          >
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          .value=${String(target)}
+          aria-label=${translateText("control_panel.mobilisation")}
+          aria-valuetext=${details}
+          @input=${(event: Event) => {
+            this._draftMobilisation = Number(
+              (event.target as HTMLInputElement).value,
+            );
+          }}
+          @change=${(event: Event) => {
+            this.eventBus.emit(
+              new SendMobilisationIntentEvent(
+                Number((event.target as HTMLInputElement).value),
+              ),
+            );
+          }}
+          @pointerup=${(event: Event) =>
+            (event.target as HTMLInputElement).blur()}
+          class="w-full h-1.5 accent-teal-300 cursor-pointer"
+        />
+      </div>
+    `;
   }
 
   private calculateTroopBar(): { greenPercent: number; orangePercent: number } {
@@ -588,6 +671,7 @@ export class ControlPanel extends LitElement implements Controller {
           @input=${(e: Event) => this.handleRatioSliderInput(e)}
           @pointerup=${(e: Event) => this.handleRatioSliderPointerUp(e)}
           class="flex-1 h-1.5 accent-aquarius cursor-pointer"
+          aria-label=${translateText("control_panel.attack_strength")}
         />
       </div>
     `;
@@ -707,6 +791,7 @@ export class ControlPanel extends LitElement implements Controller {
             @input=${(e: Event) => this.handleRatioSliderInput(e)}
             @pointerup=${(e: Event) => this.handleRatioSliderPointerUp(e)}
             class="w-full h-1.5 accent-aquarius cursor-pointer"
+            aria-label=${translateText("control_panel.attack_strength")}
           />
         </div>
       </div>
@@ -738,6 +823,7 @@ export class ControlPanel extends LitElement implements Controller {
       >
         <div class="lg:hidden">${this.renderMobile()}</div>
         <div class="hidden lg:block">${this.renderDesktop()}</div>
+        ${this.renderMobilisation()}
       </div>
     `;
   }

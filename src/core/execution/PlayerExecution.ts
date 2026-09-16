@@ -83,11 +83,15 @@ export class PlayerExecution implements Execution {
       return;
     }
 
-    const troopInc = this.config.troopIncreaseRate(this.player);
-    this.player.addTroops(troopInc);
+    if (this.player.type() !== PlayerType.Human) {
+      this.player.setMobilisationPercentage(
+        this.player.incomingAttacks().length > 0 ? 75 : 55,
+      );
+    }
     this.player.setCivilians(
       this.player.civilians() + this.config.civilianIncreaseRate(this.player),
     );
+    this.player.reconcileMobilisation();
     const goldFromWorkers = this.config.goldAdditionRate(this.player);
     this.player.addGold(goldFromWorkers);
 

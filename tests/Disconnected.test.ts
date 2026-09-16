@@ -13,7 +13,6 @@ import {
   PlayerType,
   UnitType,
 } from "../src/core/game/Game";
-import { toInt } from "../src/core/Util";
 import { setup } from "./util/Setup";
 import { UseRealAttackLogic } from "./util/TestConfig";
 import { executeTicks } from "./util/utils";
@@ -283,7 +282,9 @@ describe("Disconnected", () => {
       player2.conquer(game.map().ref(coastX - 2, 3));
       player2.markDisconnected(true);
 
+      player1.setMobilisationPercentage(100);
       const troopsBeforeAttack = player1.troops();
+      const populationBeforeAttack = player1.totalPopulation();
       const startTroops = troopsBeforeAttack * 0.25;
 
       game.addExecution(
@@ -298,8 +299,10 @@ describe("Disconnected", () => {
       // (toConquer empties, refreshToConquer() finds nothing, then retreat).
       game.executeNextTick();
 
-      // startTroops returned with no malus -> no net troop loss, only passive growth
-      expect(player1.troops()).toBeGreaterThanOrEqual(troopsBeforeAttack);
+      // Friendly conquest returns the same soldiers; no population is lost.
+      expect(player1.totalPopulation()).toBeGreaterThanOrEqual(
+        populationBeforeAttack,
+      );
     });
 
     test("Conqueror gets conquered disconnected team member's transport- and warships", () => {
@@ -443,18 +446,21 @@ describe("Disconnected", () => {
 
       executeTicks(game, 1);
 
-      const troopIncPerTick = game.config().troopIncreaseRate(player1);
-      const expectedTroopGrowth = toInt(troopIncPerTick * 1);
-      const expectedFinalTroops = Number(
-        toInt(player1.troops()) + expectedTroopGrowth,
-      );
+      const populationBeforeReturn = player1.totalPopulation();
 
       transportShip.updateTransportShipState({ isRetreating: true });
       executeTicks(game, 1);
 
       expect(transportShip.isActive()).toBe(false);
-      // Also test if boat troops were returned to player1 as new ship owner
-      expect(player1.troops()).toBe(expectedFinalTroops + boatTroops);
+      // The ship's survivors remain part of the same population and are
+      // reconciled to the owner's mobilisation target exactly once.
+      expect(player1.deployedTroops()).toBe(0);
+      expect(player1.totalPopulation()).toBeGreaterThanOrEqual(
+        populationBeforeReturn,
+      );
+      expect(player1.totalPopulation()).toBeLessThanOrEqual(
+        populationBeforeReturn + 2,
+      );
     });
   });
 });

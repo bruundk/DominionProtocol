@@ -94,6 +94,10 @@ export class SendAttackIntentEvent implements GameEvent {
   ) {}
 }
 
+export class SendMobilisationIntentEvent implements GameEvent {
+  constructor(public readonly percentage: number) {}
+}
+
 export class SendBoatAttackIntentEvent implements GameEvent {
   constructor(
     public readonly dst: TileRef,
@@ -289,6 +293,9 @@ export class Transport {
       this.onSendSpawnIntentEvent(e),
     );
     this.eventBus.on(SendAttackIntentEvent, (e) => this.onSendAttackIntent(e));
+    this.eventBus.on(SendMobilisationIntentEvent, (e) =>
+      this.onSendMobilisationIntent(e),
+    );
     this.eventBus.on(SendUpgradeStructureIntentEvent, (e) =>
       this.onSendUpgradeStructureIntent(e),
     );
@@ -728,6 +735,13 @@ export class Transport {
       type: "attack",
       targetID: event.targetID,
       troops: event.troops,
+    });
+  }
+
+  private onSendMobilisationIntent(event: SendMobilisationIntentEvent) {
+    this.sendIntent({
+      type: "mobilisation",
+      percentage: event.percentage,
     });
   }
 

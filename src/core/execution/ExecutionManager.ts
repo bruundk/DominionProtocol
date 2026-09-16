@@ -16,6 +16,7 @@ import { EmbargoAllExecution } from "./EmbargoAllExecution";
 import { EmbargoExecution } from "./EmbargoExecution";
 import { EmojiExecution } from "./EmojiExecution";
 import { MarkDisconnectedExecution } from "./MarkDisconnectedExecution";
+import { MobilisationExecution } from "./MobilisationExecution";
 import { MoveWarshipExecution } from "./MoveWarshipExecution";
 import { NationExecution } from "./NationExecution";
 import { NoOpExecution } from "./NoOpExecution";
@@ -57,6 +58,8 @@ export class Executor {
 
     // create execution
     switch (intent.type) {
+      case "mobilisation":
+        return new MobilisationExecution(player, intent.percentage);
       case "attack": {
         return new AttackExecution(
           intent.troops,

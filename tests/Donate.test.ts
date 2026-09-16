@@ -52,16 +52,18 @@ describe("Donate troops to an ally", () => {
 
     // Ensure donor can actually donate the requested amount
     donor.addTroops(6000);
-    const donorTroopsBefore = donor.troops();
-    const recipientTroopsBefore = recipient.troops();
+    const donorPopulationBefore = donor.totalPopulation();
+    const recipientPopulationBefore = recipient.totalPopulation();
     game.addExecution(new DonateTroopsExecution(donor, recipientInfo.id, 5000));
 
     for (let i = 0; i < 5; i++) {
       game.executeNextTick();
     }
 
-    expect(donor.troops() < donorTroopsBefore).toBe(true);
-    expect(recipient.troops() > recipientTroopsBefore).toBe(true);
+    expect(donor.totalPopulation()).toBeLessThan(donorPopulationBefore);
+    expect(recipient.totalPopulation()).toBeGreaterThan(
+      recipientPopulationBefore,
+    );
   });
 });
 
@@ -121,9 +123,12 @@ describe("Donate gold to an ally", () => {
     game.executeNextTick();
 
     // 1 tick elapsed; PlayerExecution adds 100n passive income from workers
-    const passiveIncome = 100n;
-    expect(donor.gold()).toBe(donorGoldBefore - 5000n + passiveIncome);
-    expect(recipient.gold()).toBe(recipientGoldBefore + 5000n + passiveIncome);
+    const donorIncome = game.config().goldAdditionRate(donor);
+    const recipientIncome = game.config().goldAdditionRate(recipient);
+    expect(donor.gold()).toBe(donorGoldBefore - 5000n + donorIncome);
+    expect(recipient.gold()).toBe(
+      recipientGoldBefore + 5000n + recipientIncome,
+    );
   });
 
   it("Gold should default to 1/3 when null is passed", async () => {
@@ -151,10 +156,13 @@ describe("Donate gold to an ally", () => {
     game.executeNextTick();
     game.executeNextTick();
     // 1 tick elapsed for donation transfer; PlayerExecution adds 100n passive income from workers
-    const passiveIncome = 100n;
+    const donorIncome = game.config().goldAdditionRate(donor);
+    const recipientIncome = game.config().goldAdditionRate(recipient);
     const expectedDonation = goldBefore / 3n;
-    expect(donor.gold()).toBe(goldBefore - expectedDonation + passiveIncome);
-    expect(recipient.gold()).toBe(recBefore + expectedDonation + passiveIncome);
+    expect(donor.gold()).toBe(goldBefore - expectedDonation + donorIncome);
+    expect(recipient.gold()).toBe(
+      recBefore + expectedDonation + recipientIncome,
+    );
   });
 });
 
@@ -308,7 +316,7 @@ describe("Self donation prevention", () => {
     player.addGold(1000n);
     player.addTroops(1000);
     const goldBefore = player.gold();
-    const troopsBefore = player.troops();
+    const populationBefore = player.totalPopulation();
 
     game.addExecution(new DonateGoldExecution(player, player.id(), 500));
     game.addExecution(new DonateTroopsExecution(player, player.id(), 500));
@@ -316,6 +324,6 @@ describe("Self donation prevention", () => {
 
     // Verify no changes occurred to gold or troops (execution failed/aborted)
     expect(player.gold()).toBeGreaterThanOrEqual(goldBefore);
-    expect(player.troops()).toBeGreaterThanOrEqual(troopsBefore);
+    expect(player.totalPopulation()).toBeGreaterThanOrEqual(populationBefore);
   });
 });

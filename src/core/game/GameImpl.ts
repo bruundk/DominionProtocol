@@ -509,6 +509,13 @@ export class GameImpl implements Game {
 
     this.execs.push(...inited);
     this.unInitExecs = unInited;
+    if (!this.inSpawnPhase()) {
+      for (const player of this._players.values()) {
+        if (player.isAlive() && player.hasSpawned()) {
+          player.reconcileMobilisation();
+        }
+      }
+    }
     for (const player of this._players.values()) {
       const update = player.toUpdate(
         this.playerStatsQuads,

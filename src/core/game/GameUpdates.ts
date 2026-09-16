@@ -254,6 +254,9 @@ export interface PlayerUpdate {
   troops?: number;
   /** Low-churn population state; travels in ordinary diffs, not packed quints. */
   civilians?: number;
+  totalPopulation?: number;
+  deployedTroops?: number;
+  mobilisationPercentage?: number;
   allies?: number[];
   embargoes?: Set<PlayerID>;
   isTraitor?: boolean;

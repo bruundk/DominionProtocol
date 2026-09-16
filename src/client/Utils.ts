@@ -298,7 +298,9 @@ export function renderDuration(totalSeconds: number): string {
 }
 
 export function renderTroops(troops: number): string {
-  return renderNumber(troops / 10);
+  // Mobilisation converts one civilian into one soldier. Display both in the
+  // same population unit so moving the slider never appears to lose 90%.
+  return renderNumber(troops);
 }
 
 export async function copyToClipboard(

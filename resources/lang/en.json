@@ -514,10 +514,15 @@
   "control_panel": {
     "allied_afk_neighbor_info": "You can attack disconnected players even if you are allied with them.",
     "army_limit_warning": "You're near your army limit! Consider sending troops to teammates.",
+    "attack_strength": "Attack strength",
     "available_troops": "Available Troops",
     "civilian_details": "{label}: {count} / {capacity} capacity; growth: +{growth}/s",
     "civilians": "Civilians",
+    "deployed_soldiers": "Deployed {count}",
     "low_troops_warning": "You are very low on troops - You should always keep some troops for defense.",
+    "mobilisation": "Mobilisation",
+    "mobilisation_details": "Mobilisation target {target}%; actual soldiers {actual}%. Total population {population}: {civilians} civilians, {available} available troops and {deployed} deployed troops. Deployed troops remain soldiers until they return.",
+    "mobilisation_split": "Target {target}% · Actual {actual}%",
     "teammate_afk_neighbor_info": "You can attack disconnected teammates.",
     "traitor_neighbor_info": "You can betray traitors without becoming a traitor yourself."
   },

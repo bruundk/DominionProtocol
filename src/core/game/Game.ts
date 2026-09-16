@@ -658,6 +658,13 @@ export interface Player {
   /** Player-wide non-military population, independent of deployed troops. */
   civilians(): number;
   setCivilians(civilians: number): void;
+  /** Civilians, reserve troops, and troops currently deployed. */
+  totalPopulation(): number;
+  /** Troops committed to land attacks or transport ships. */
+  deployedTroops(): number;
+  mobilisationPercentage(): number;
+  setMobilisationPercentage(percentage: number): void;
+  reconcileMobilisation(): void;
   troops(): number;
   setTroops(troops: number): void;
   addTroops(troops: number): void;

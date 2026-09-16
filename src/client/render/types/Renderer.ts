@@ -77,6 +77,9 @@ export interface PlayerState {
   troops: number;
   /** Optional for older renderer snapshots; new engine snapshots supply it. */
   civilians?: number;
+  totalPopulation?: number;
+  deployedTroops?: number;
+  mobilisationPercentage?: number;
   isTraitor: boolean;
   traitorRemainingTicks: number;
   inDoomsdayClock: boolean;

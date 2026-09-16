@@ -1,5 +1,15 @@
 # Game Development Roadmap
 
+## Mobilisation milestone
+
+- [x] Add one conserved, player-wide population model.
+- [x] Add instant civilian/troop conversion through a multiplayer intent.
+- [x] Count land attacks and transport ships as deployed soldiers.
+- [x] Replace independent troop generation with population growth.
+- [x] Add separate target/actual mobilisation HUD controls.
+- [x] Add English tooltips and accessibility labels.
+- [x] Document balance assumptions and accounting.
+
 This document tracks the transformation of our OpenFront fork into a distinct
 strategy game focused on empire development, population management and warfare.
 

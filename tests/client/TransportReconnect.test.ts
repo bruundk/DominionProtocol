@@ -431,6 +431,26 @@ describe("Transport reconnect policy", () => {
   });
 
   describe("recovery", () => {
+    it("defers reconnect attempts while hidden and resumes with a fresh budget", () => {
+      let hidden = true;
+      vi.spyOn(document, "hidden", "get").mockImplementation(() => hidden);
+      FakeWebSocket.script = rejectAfter(50, 1006);
+      connect();
+      vi.advanceTimersByTime(300_000);
+
+      expect(FakeWebSocket.instances).toHaveLength(1);
+      expect(showInGameConfirm).not.toHaveBeenCalled();
+
+      FakeWebSocket.script = acceptAndTalk(10);
+      hidden = false;
+      transport.resumeAfterBackground();
+      vi.advanceTimersByTime(20);
+
+      expect(FakeWebSocket.instances).toHaveLength(2);
+      expect(FakeWebSocket.instances[1].readyState).toBe(FakeWebSocket.OPEN);
+      expect(showInGameConfirm).not.toHaveBeenCalled();
+    });
+
     it("resumes through onconnect, the rejoin path", async () => {
       FakeWebSocket.script = flakyThenHealthy(3);
       onconnect.mockImplementation(() => {

@@ -32,6 +32,7 @@ export type ClientID = string;
 export type Intent =
   | SpawnIntent
   | AttackIntent
+  | MobilisationIntent
   | CancelAttackIntent
   | BoatAttackIntent
   | CancelBoatIntent
@@ -57,6 +58,7 @@ export type Intent =
   | ToggleGameStartTimer;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
+export type MobilisationIntent = z.infer<typeof MobilisationIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
 export type SpawnIntent = z.infer<typeof SpawnIntentSchema>;
 export type BoatAttackIntent = z.infer<typeof BoatAttackIntentSchema>;
@@ -620,6 +622,11 @@ export const AttackIntentSchema = z.object({
   troops: zb.float({ min: 0 }).nullable(),
 });
 
+export const MobilisationIntentSchema = z.object({
+  type: z.literal("mobilisation"),
+  percentage: zb.uint({ max: 100 }),
+});
+
 export const SpawnIntentSchema = z.object({
   type: z.literal("spawn"),
   // A TileRef indexes the typed-array terrain buffers, so it must be a
@@ -789,6 +796,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   TogglePauseIntentSchema,
   UpdateGameConfigIntentSchema,
   ToggleGameStartTimerIntentSchema,
+  MobilisationIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

@@ -52,6 +52,9 @@ export function diffPlayerUpdate(
     prev.trainGold === next.trainGold &&
     prev.piracyGold === next.piracyGold &&
     prev.civilians === next.civilians &&
+    prev.totalPopulation === next.totalPopulation &&
+    prev.deployedTroops === next.deployedTroops &&
+    prev.mobilisationPercentage === next.mobilisationPercentage &&
     prev.isTraitor === next.isTraitor &&
     prev.traitorRemainingTicks === next.traitorRemainingTicks &&
     prev.inDoomsdayClock === next.inDoomsdayClock &&
@@ -106,6 +109,15 @@ export function diffPlayerUpdate(
   setIfDifferent("trainGold", prev.trainGold === next.trainGold);
   setIfDifferent("piracyGold", prev.piracyGold === next.piracyGold);
   setIfDifferent("civilians", prev.civilians === next.civilians);
+  setIfDifferent(
+    "totalPopulation",
+    prev.totalPopulation === next.totalPopulation,
+  );
+  setIfDifferent("deployedTroops", prev.deployedTroops === next.deployedTroops);
+  setIfDifferent(
+    "mobilisationPercentage",
+    prev.mobilisationPercentage === next.mobilisationPercentage,
+  );
   // tilesOwned / gold / troops / goldEarned intentionally absent — see
   // EXCEPTION above (goldEarned churns every tick via worker income).
   setIfDifferent("isTraitor", prev.isTraitor === next.isTraitor);
@@ -186,6 +198,12 @@ export function applyStateUpdate(target: PlayerState, pu: PlayerUpdate): void {
   if (pu.goldEarned !== undefined) target.goldEarned = Number(pu.goldEarned);
   if (pu.troops !== undefined) target.troops = pu.troops;
   if (pu.civilians !== undefined) target.civilians = pu.civilians;
+  if (pu.totalPopulation !== undefined)
+    target.totalPopulation = pu.totalPopulation;
+  if (pu.deployedTroops !== undefined)
+    target.deployedTroops = pu.deployedTroops;
+  if (pu.mobilisationPercentage !== undefined)
+    target.mobilisationPercentage = pu.mobilisationPercentage;
   if (pu.isTraitor !== undefined) target.isTraitor = pu.isTraitor;
   if (pu.traitorRemainingTicks !== undefined) {
     target.traitorRemainingTicks = Math.max(0, pu.traitorRemainingTicks);

@@ -1,5 +1,9 @@
 # Civilian growth and income
 
+> Mobilisation now extends this foundation. Growth and capacity use total
+> population, while the civilian-income formula remains unchanged. See
+> [MOBILISATION.md](MOBILISATION.md).
+
 This first economy pass uses the existing player-wide civilian state and shared
 army. It adds no mobilisation, resources, buildings or combat changes. PR #1 was
 merged before this branch started.
@@ -11,16 +15,14 @@ All simulation population arithmetic is integer-based. Each living player's
 Constants live in `src/core/game/Population.ts`.
 
 - Starting civilians: **1,000**, unchanged.
-- Capacity: **1,000 + 2 × owned tiles + 10,000 × completed city levels**.
-  Cities under construction contribute nothing, matching army-capacity rules.
-  Captured cities count for their current owner; demolished or lost cities no
-  longer provide capacity.
-- Growth per tick: **min(2, ceil((capacity − civilians) / 1,000))**, or zero
-  when already at/above capacity or owning no land. Ceiling is implemented with
-  bigint division, not fractional population. The increment never overshoots
-  capacity. Growth is identical for humans, nations and bots, with no difficulty
-  modifier. At most 20 civilians arrive per second; growth slows as capacity
-  fills, with a minimum of 10 per second until the last few people arrive.
+- Capacity: **1,000 + the existing army-capacity curve**. This scales
+  non-linearly with owned territory and includes the existing completed-city
+  bonuses. Cities under construction contribute nothing.
+- Growth per tick:
+  **floor((10 + totalPopulation^0.73 / 4) × unusedCapacityShare)**, clamped to
+  the remaining capacity and with a minimum of one. This replaces the original
+  capped +20/second prototype rate and mirrors the former army-growth curve.
+  Bots receive 0.5× growth; nations retain the existing difficulty modifiers.
 - Passive worker income per tick: **floor(civilians / 10)** gold for humans and
   nations; **floor(civilians / 20)** for bots. Then apply the existing configured
   gold multiplier and rounding. The bot modifier preserves its previous half
@@ -28,20 +30,18 @@ Constants live in `src/core/game/Population.ts`.
   that tick's growth. There is no minimum income or separate worker population.
 
 At 1,000 civilians, default human/nation passive income remains 100 gold/tick
-(1,000/second), and bots retain 50/tick. A completed level-one city on unchanged
-land supports 10,000 additional civilians and eventually 1,000 additional
-gold/tick for a human/nation. City construction does not grant population
-instantly. These deliberately simple values are **playtest assumptions**, not
-final balancing; city payback and late-game income need testing.
+(1,000/second), and bots retain 50/tick. City construction does not grant
+population instantly. The exact territory/city curve remains a **playtest
+assumption** and can be tuned without changing population accounting.
 
 Losing capacity **stops growth, never deletes civilians**. Excess civilians still
 earn income. Growth resumes when capacity exceeds population again. This means
 a damaged empire retains economic strength; conquest population transfers,
 casualties, starvation, upkeep and other loss penalties are explicitly deferred.
 
-Only `goldAdditionRate` (the existing worker grant) changes. Trade, trains,
-piracy, donations, conquest and building costs are untouched. Troop growth,
-army capacity, troop spending and combat remain independent from civilians.
+Trade, trains, piracy, donations, conquest and building costs are untouched.
+Army capacity and combat remain unchanged; population growth now supplies the
+people who can be mobilised instead of generating soldiers independently.
 
 ## Synchronization and HUD
 

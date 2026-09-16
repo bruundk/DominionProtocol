@@ -19,14 +19,7 @@ import {
   UnitInfo,
   UnitType,
 } from "../game/Game";
-import {
-  CIVILIAN_GROWTH_DIVISOR,
-  CIVILIANS_PER_CITY_LEVEL,
-  CIVILIANS_PER_GOLD,
-  CIVILIANS_PER_TILE,
-  MAX_CIVILIAN_GROWTH_PER_TICK,
-  STARTING_CIVILIANS,
-} from "../game/Population";
+import { CIVILIANS_PER_GOLD, STARTING_CIVILIANS } from "../game/Population";
 import { UserSettings } from "../game/UserSettings";
 import { GameConfig, TeamCountConfig } from "../Schemas";
 import { NukeType } from "../StatsSchemas";
@@ -1080,30 +1073,43 @@ export class Config {
   }
 
   civilianCapacity(player: Player | PlayerView): number {
-    const cityLevels = player
-      .units(UnitType.City)
-      .filter((city) => !city.isUnderConstruction())
-      .reduce((sum, city) => sum + city.level(), 0);
-    return (
-      STARTING_CIVILIANS +
-      this.startManpower(new PlayerInfo("", player.type(), null, "")) +
-      player.numTilesOwned() * CIVILIANS_PER_TILE +
-      cityLevels * CIVILIANS_PER_CITY_LEVEL
-    );
+    // Reuse the established territory/city army-cap curve. This gives a new
+    // empire enough headroom to expand and makes both land and cities valuable.
+    return STARTING_CIVILIANS + Math.floor(this.maxTroops(player));
   }
 
   civilianIncreaseRate(player: Player | PlayerView): number {
-    // Integer ceiling keeps small populations growing without fractional state.
-    const gap =
-      BigInt(this.civilianCapacity(player)) - BigInt(player.totalPopulation());
-    if (gap <= 0n || player.numTilesOwned() === 0) return 0;
-    const divisor = BigInt(CIVILIAN_GROWTH_DIVISOR);
-    const rate = (gap + divisor - 1n) / divisor;
-    return Number(
-      rate > BigInt(MAX_CIVILIAN_GROWTH_PER_TICK)
-        ? BigInt(MAX_CIVILIAN_GROWTH_PER_TICK)
-        : rate,
-    );
+    const population = player.totalPopulation();
+    const capacity = this.civilianCapacity(player);
+    const gap = capacity - population;
+    if (gap <= 0 || player.numTilesOwned() === 0) return 0;
+
+    // Population replaces the old independently generated army, so it follows
+    // the same responsive curve: larger populations grow faster, while growth
+    // slows smoothly as territory/city capacity fills.
+    let growth = (10 + pow(population, 0.73) / 4) * (gap / capacity);
+
+    if (player.type() === PlayerType.Bot) {
+      growth *= 0.5;
+    } else if (player.type() === PlayerType.Nation) {
+      switch (this._gameConfig.difficulty) {
+        case Difficulty.Easy:
+          growth *= 0.9;
+          break;
+        case Difficulty.Medium:
+          growth *= 0.95;
+          break;
+        case Difficulty.Hard:
+          break;
+        case Difficulty.Impossible:
+          growth *= 1.05;
+          break;
+        default:
+          assertNever(this._gameConfig.difficulty);
+      }
+    }
+
+    return Math.min(gap, Math.max(1, Math.floor(growth)));
   }
 
   nukeMagnitudes(unitType: UnitType): NukeMagnitude {

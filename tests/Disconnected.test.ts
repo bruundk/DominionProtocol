@@ -447,6 +447,7 @@ describe("Disconnected", () => {
       executeTicks(game, 1);
 
       const populationBeforeReturn = player1.totalPopulation();
+      const populationGrowth = game.config().civilianIncreaseRate(player1);
 
       transportShip.updateTransportShipState({ isRetreating: true });
       executeTicks(game, 1);
@@ -459,7 +460,7 @@ describe("Disconnected", () => {
         populationBeforeReturn,
       );
       expect(player1.totalPopulation()).toBeLessThanOrEqual(
-        populationBeforeReturn + 2,
+        populationBeforeReturn + populationGrowth,
       );
     });
   });

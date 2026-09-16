@@ -24,25 +24,27 @@ describe("civilian economy", () => {
     const base = config.civilianCapacity(player);
     expect(base).toBeGreaterThan(1000);
     player.conquer(game.ref(1, 0));
-    expect(config.civilianCapacity(player)).toBe(base + 2);
+    const landCapacity = config.civilianCapacity(player);
+    expect(landCapacity).toBeGreaterThan(base);
     const city = player.buildUnit(UnitType.City, game.ref(0, 0), {});
-    expect(config.civilianCapacity(player)).toBe(base + 2 + 10000);
+    const cityCapacity = config.civilianCapacity(player);
+    expect(cityCapacity).toBeGreaterThan(landCapacity);
     city.setUnderConstruction(true);
-    expect(config.civilianCapacity(player)).toBe(base + 2);
+    expect(config.civilianCapacity(player)).toBe(landCapacity);
     city.setUnderConstruction(false);
     player.upgradeUnit(city);
-    expect(config.civilianCapacity(player)).toBe(
-      base + 2 + city.level() * 10000,
-    );
+    expect(config.civilianCapacity(player)).toBeGreaterThan(cityCapacity);
     city.delete();
-    expect(config.civilianCapacity(player)).toBe(base + 2);
+    expect(config.civilianCapacity(player)).toBe(landCapacity);
   });
 
   it("grows in integer ticks, clamps at capacity and never deletes excess people", async () => {
     const { game, player, config, execution } = await economy();
     const initial = player.civilians();
+    const initialRate = config.civilianIncreaseRate(player);
     execution.tick(1);
-    expect(player.civilians()).toBe(initial + 2);
+    expect(initialRate).toBeGreaterThan(20);
+    expect(player.civilians()).toBe(initial + initialRate);
     player.setCivilians(config.civilianCapacity(player));
     execution.tick(2);
     expect(player.civilians()).toBe(config.civilianCapacity(player));
@@ -59,12 +61,30 @@ describe("civilian economy", () => {
     expect(config.civilianIncreaseRate(player)).toBe(0);
   });
 
+  it("gives larger territories and completed cities more capacity and growth", async () => {
+    const { game, player, config } = await economy();
+    const smallCapacity = config.civilianCapacity(player);
+    player.setCivilians(smallCapacity - 10000);
+    const smallGrowth = config.civilianIncreaseRate(player);
+    for (let x = 1; x <= 8; x++) {
+      player.conquer(game.ref(x, 0));
+    }
+    const landCapacity = config.civilianCapacity(player);
+    const landGrowth = config.civilianIncreaseRate(player);
+    expect(landCapacity).toBeGreaterThan(smallCapacity);
+    expect(landGrowth).toBeGreaterThan(smallGrowth);
+
+    player.buildUnit(UnitType.City, game.ref(0, 0), {});
+    expect(config.civilianCapacity(player)).toBeGreaterThan(landCapacity);
+    expect(config.civilianIncreaseRate(player)).toBeGreaterThan(landGrowth);
+  });
+
   it.each([PlayerType.Human, PlayerType.Nation, PlayerType.Bot])(
     "uses the same capacity and growth rules for %s",
     async (type) => {
       const { player, config, execution } = await economy(type);
       expect(config.civilianCapacity(player)).toBeGreaterThan(1000);
-      expect(config.civilianIncreaseRate(player)).toBe(2);
+      expect(config.civilianIncreaseRate(player)).toBeGreaterThan(0);
       expect(config.goldAdditionRate(player)).toBe(
         type === PlayerType.Bot ? 50n : 100n,
       );
@@ -82,20 +102,21 @@ describe("civilian economy", () => {
     const { game, player, config } = await economy();
     const city = player.buildUnit(UnitType.City, game.ref(0, 0), {});
     player.setCivilians(0);
-    expect(config.civilianIncreaseRate(player)).toBe(2);
+    expect(config.civilianIncreaseRate(player)).toBeGreaterThan(0);
     player.upgradeUnit(city);
-    expect(config.civilianIncreaseRate(player)).toBe(2);
+    expect(config.civilianIncreaseRate(player)).toBeGreaterThan(0);
     player.upgradeUnit(city);
-    expect(config.civilianIncreaseRate(player)).toBe(2);
-    player.setCivilians(36000);
+    expect(config.civilianIncreaseRate(player)).toBeGreaterThan(0);
     city.delete();
+    player.setCivilians(config.civilianCapacity(player) + 1000);
+    const excess = player.civilians();
     expect(config.civilianIncreaseRate(player)).toBe(0);
-    expect(player.civilians()).toBe(36000);
+    expect(player.civilians()).toBe(excess);
     player.buildUnit(UnitType.City, game.ref(0, 0), {});
-    expect(config.civilianIncreaseRate(player)).toBe(1);
+    expect(config.civilianIncreaseRate(player)).toBeGreaterThan(0);
     player.relinquish(game.ref(0, 0));
     expect(config.civilianIncreaseRate(player)).toBe(0);
-    expect(player.civilians()).toBe(36000);
+    expect(player.civilians()).toBe(excess);
   });
 
   it("synchronizes growing counts and produces identical hashes for identical runs", async () => {
@@ -121,9 +142,9 @@ describe("civilian economy", () => {
     player.setCivilians(1000);
     player.setMobilisationPercentage(50);
     const population = player.totalPopulation();
+    const growth = config.civilianIncreaseRate(player);
     execution.tick(1);
-    expect(player.totalPopulation()).toBeGreaterThanOrEqual(population);
-    expect(player.totalPopulation() - population).toBeLessThanOrEqual(2);
+    expect(player.totalPopulation() - population).toBe(growth);
     player.setCivilians(0);
     expect(config.goldAdditionRate(player)).toBe(0n);
     player.setCivilians(100000);

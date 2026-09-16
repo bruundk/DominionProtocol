@@ -172,7 +172,7 @@ export class ControlPanel extends LitElement implements Controller {
     if (this._draftMobilisation === this._mobilisation) {
       this._draftMobilisation = null;
     }
-    this.troopRate = this._civilianGrowth;
+    this.troopRate = (this._civilianGrowth * this._mobilisation) / 100;
 
     const helpEnabled = new UserSettings().helpMessages();
 
@@ -357,7 +357,7 @@ export class ControlPanel extends LitElement implements Controller {
   private updateTroopIncrease() {
     const player = this.game?.myPlayer();
     if (player === null) return;
-    const troopIncreaseRate = this.game.config().troopIncreaseRate(player);
+    const troopIncreaseRate = this.game.config().civilianIncreaseRate(player);
     this._troopRateIsIncreasing =
       troopIncreaseRate >= this._lastTroopIncreaseRate;
     this._lastTroopIncreaseRate = troopIncreaseRate;

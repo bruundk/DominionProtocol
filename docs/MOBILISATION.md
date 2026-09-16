@@ -25,11 +25,18 @@ The PR #2 income formula is unchanged:
 - Humans and nations: `floor(civilians / 10) × gold multiplier` per tick.
 - Bots: `floor(civilians / 20) × gold multiplier` per tick.
 
-Population growth remains deterministic and capped at two people per tick, but
-capacity is compared with total population. Capacity contains configured
-starting army, 1,000 starting civilians, two people per owned land tile, and
-10,000 per completed city level. Losing capacity stops growth without deleting
-people.
+Population growth is deterministic and capacity is compared with total
+population. Capacity is **1,000 plus the existing army-capacity curve**, so it
+scales with owned territory and completed city levels. The growth curve is:
+
+`floor((10 + population^0.73 / 4) × unused-capacity share)`
+
+with a minimum of one while capacity remains. This deliberately mirrors the
+responsive shape of the former troop-growth system: growth is strong enough
+for early expansion, territory and cities raise both headroom and growth, and
+growth slows near capacity. Bot growth is halved; nation difficulty keeps the
+existing 0.9×/0.95×/1×/1.05× modifiers. Losing capacity stops growth without
+deleting people.
 
 Independent troop growth is disabled. New soldiers come from existing
 civilians. The army cap limits new conversion but does not delete existing

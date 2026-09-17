@@ -52,6 +52,10 @@ function getStructureRatios(
       ratioPerCity: 0.75,
       perceivedCostIncreasePerOwned: 1,
     },
+    [UnitType.Market]: {
+      ratioPerCity: 0.5,
+      perceivedCostIncreasePerOwned: 0.5,
+    },
     [UnitType.SAMLauncher]: {
       ratioPerCity: SAM_RATIO_BY_DIFFICULTY[difficulty],
       perceivedCostIncreasePerOwned: 0.3,
@@ -493,6 +497,7 @@ export class NationStructureBehavior {
     const buildOrder: UnitType[] = [
       UnitType.Port,
       UnitType.Factory,
+      UnitType.Market,
       UnitType.SAMLauncher,
       UnitType.MissileSilo,
     ];
@@ -908,6 +913,8 @@ export class NationStructureBehavior {
         return this.missileSiloValue();
       case UnitType.Factory:
         return this.factoryValue();
+      case UnitType.Market:
+        return this.cityValue();
       case UnitType.Port:
         return this.portValue();
       case UnitType.SAMLauncher:
@@ -1281,6 +1288,7 @@ export class NationStructureBehavior {
       switch (unit.type()) {
         case UnitType.City:
         case UnitType.Factory:
+        case UnitType.Market:
         case UnitType.MissileSilo:
         case UnitType.Port:
           protectEntries.push({

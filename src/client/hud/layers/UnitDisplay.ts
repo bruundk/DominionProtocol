@@ -21,6 +21,7 @@ import {
   factoryIcon,
   goldCoinIcon,
   hydrogenBombIcon,
+  marketIcon,
   mirvIcon,
   missileSiloIcon,
   portIcon,
@@ -39,6 +40,10 @@ export class UnitDisplay extends LitElement implements Controller {
   private _cities = 0;
   private _warships = 0;
   private _factories = 0;
+  private _markets = 0;
+  private _completedMarkets = 0;
+  private _enabledMarkets = 0;
+  private _marketSlots = 0;
   private _missileSilo = 0;
   private _port = 0;
   private _defensePost = 0;
@@ -105,6 +110,12 @@ export class UnitDisplay extends LitElement implements Controller {
           this.cost(item) <= (player?.gold() ?? 0n) &&
           (player?.units(UnitType.Port).length ?? 0) > 0
         );
+      case UnitType.Market:
+        return (
+          this.cost(item) <= (player?.gold() ?? 0n) &&
+          (player?.units(UnitType.Market).filter((market) => market.isActive())
+            .length ?? 0) < (this.game?.config().marketSlots(player!) ?? 0)
+        );
       default:
         return this.cost(item) <= (player?.gold() ?? 0n);
     }
@@ -122,6 +133,15 @@ export class UnitDisplay extends LitElement implements Controller {
     this._defensePost = player.totalUnitLevels(UnitType.DefensePost);
     this._samLauncher = player.totalUnitLevels(UnitType.SAMLauncher);
     this._factories = player.totalUnitLevels(UnitType.Factory);
+    const markets = player
+      .units(UnitType.Market)
+      .filter((market) => market.isActive());
+    this._markets = markets.length;
+    this._completedMarkets = markets.filter(
+      (market) => !market.isUnderConstruction(),
+    ).length;
+    this._enabledMarkets = this.game.config().enabledMarketCount(player);
+    this._marketSlots = this.game.config().marketSlots(player);
     this._warships = player.totalUnitLevels(UnitType.Warship);
     this.requestUpdate();
   }
@@ -142,7 +162,9 @@ export class UnitDisplay extends LitElement implements Controller {
 
     return html`
       <div class="border-t border-white/10 p-0.5 w-full">
-        <div class="grid grid-rows-1 grid-flow-col gap-0.5 w-fit mx-auto">
+        <div
+          class="flex flex-wrap justify-center gap-0.5 w-fit max-w-full mx-auto"
+        >
           ${this.renderUnitItem(
             cityIcon,
             this._cities,
@@ -156,6 +178,20 @@ export class UnitDisplay extends LitElement implements Controller {
             UnitType.Factory,
             "factory",
             this.keybinds["buildFactory"]?.key ?? "2",
+          )}
+          ${this.renderUnitItem(
+            marketIcon,
+            this._markets,
+            UnitType.Market,
+            "market",
+            this.keybinds["buildMarket"]?.key ?? "⇧2",
+            translateText("build_menu.market_status", {
+              enabled: this._enabledMarkets,
+              completed: this._completedMarkets,
+              constructing: this._markets - this._completedMarkets,
+              slots: this._marketSlots,
+              bonus: this.game.config().marketBonusBasisPoints(myPlayer) / 100,
+            }),
           )}
           ${this.renderUnitItem(
             portIcon,
@@ -224,6 +260,7 @@ export class UnitDisplay extends LitElement implements Controller {
     unitType: PlayerBuildableUnitType,
     structureKey: string,
     hotkey: string,
+    details?: string,
   ) {
     if (this.game.config().isUnitDisabled(unitType)) {
       return html``;
@@ -260,6 +297,13 @@ export class UnitDisplay extends LitElement implements Controller {
                 <div class="p-2">
                   ${translateText("build_menu.desc." + structureKey)}
                 </div>
+                ${details
+                  ? html`<div
+                      class="px-2 pb-2 text-[10px] text-cyan-300 border-b border-white/10"
+                    >
+                      ${details}
+                    </div>`
+                  : null}
                 ${unitType === UnitType.Warship
                   ? html`<div
                       class="mt-1 px-2 py-1 text-[10px] text-cyan-300 border-t border-white/10"

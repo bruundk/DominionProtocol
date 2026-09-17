@@ -43,6 +43,10 @@ Trade, trains, piracy, donations, conquest and building costs are untouched.
 Army capacity and combat remain unchanged; population growth now supplies the
 people who can be mobilised instead of generating soldiers independently.
 
+Completed, enabled Markets now add a deterministic multiplier to this civilian
+passive-income result only. The base formula above is unchanged. See
+[Markets](MARKETS.md) for the bonus curve, City slots and excess-building rules.
+
 ## Synchronization and HUD
 
 Growth uses ordinary civilian `PlayerUpdate` diffs, including zero values,

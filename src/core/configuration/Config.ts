@@ -19,6 +19,12 @@ import {
   UnitInfo,
   UnitType,
 } from "../game/Game";
+import {
+  BASIS_POINTS,
+  MARKET_CONSTRUCTION_TICKS,
+  MARKET_COST,
+  marketBonusBasisPoints,
+} from "../game/Market";
 import { CIVILIANS_PER_GOLD, STARTING_CIVILIANS } from "../game/Population";
 import { UserSettings } from "../game/UserSettings";
 import { GameConfig, TeamCountConfig } from "../Schemas";
@@ -662,6 +668,14 @@ export class Config {
           upgradable: true,
         };
         break;
+      case UnitType.Market:
+        info = {
+          cost: this.costWrapper(() => MARKET_COST, UnitType.Market),
+          constructionDuration: this.instantBuild()
+            ? 0
+            : MARKET_CONSTRUCTION_TICKS,
+        };
+        break;
       case UnitType.Train:
         info = {
           cost: () => 0n,
@@ -1064,12 +1078,57 @@ export class Config {
   }
 
   goldAdditionRate(player: Player | PlayerView): Gold {
+    return (
+      this.civilianBaseGoldAdditionRate(player) + this.marketIncomeBonus(player)
+    );
+  }
+
+  civilianBaseGoldAdditionRate(player: Player | PlayerView): Gold {
     const multiplier = this.goldMultiplierFor(player);
     // Preserve the existing bot income modifier and configured gold multiplier.
     const divisor =
       CIVILIANS_PER_GOLD * (player.type() === PlayerType.Bot ? 2 : 1);
     const baseRate = BigInt(player.civilians()) / BigInt(divisor);
     return BigInt(Math.floor(Number(baseRate) * multiplier));
+  }
+
+  /** One Market slot for every completed City level. */
+  marketSlots(player: Player | PlayerView): number {
+    return player
+      .units(UnitType.City)
+      .filter((city) => city.isActive() && !city.isUnderConstruction())
+      .reduce((slots, city) => slots + city.level(), 0);
+  }
+
+  /**
+   * Oldest Markets remain enabled when City capacity is lost. Newer excess
+   * Markets stay on the map and synchronized, but provide no income bonus.
+   */
+  enabledMarketCount(player: Player | PlayerView): number {
+    return this.enabledMarkets(player).filter(
+      (market) => !market.isUnderConstruction(),
+    ).length;
+  }
+
+  enabledMarkets(player: Player | PlayerView) {
+    const slots = this.marketSlots(player);
+    return player
+      .units(UnitType.Market)
+      .filter((market) => market.isActive())
+      .sort((a, b) => a.id() - b.id())
+      .slice(0, slots);
+  }
+
+  marketBonusBasisPoints(player: Player | PlayerView): number {
+    return marketBonusBasisPoints(this.enabledMarketCount(player));
+  }
+
+  marketIncomeBonus(player: Player | PlayerView): Gold {
+    return (
+      (this.civilianBaseGoldAdditionRate(player) *
+        BigInt(this.marketBonusBasisPoints(player))) /
+      BigInt(BASIS_POINTS)
+    );
   }
 
   civilianCapacity(player: Player | PlayerView): number {

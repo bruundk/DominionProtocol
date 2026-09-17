@@ -23,6 +23,12 @@ vi.mock("../../src/client/Utils", async (importOriginal) => {
           (_, name) => String(params?.[name]),
         );
       }
+      if (key === "control_panel.gold_details") {
+        return english.control_panel.gold_details.replace(
+          /\{(\w+)\}/g,
+          (_, name) => String(params?.[name]),
+        );
+      }
       if (key === "control_panel.civilians")
         return english.control_panel.civilians;
       if (key === "control_panel.available_troops")
@@ -170,5 +176,43 @@ describe("control-panel population indicators", () => {
     vi.advanceTimersByTime(2000);
     await panel.updateComplete;
     expect(panel.querySelector(".gold-gain-pop")).toBeNull();
+  });
+
+  it("adds Market income to the compact gold tooltip without another HUD row", async () => {
+    vi.spyOn(UserSettings.prototype, "helpMessages").mockReturnValue(false);
+    const player = makePlayerView({
+      data: { civilians: 50_000, gold: 2_000_000n },
+    });
+    const panel = document.createElement("control-panel") as ControlPanel;
+    panel.uiState = { attackRatio: 0.2 } as UIState;
+    panel.game = {
+      inSpawnPhase: () => false,
+      myPlayer: () => player,
+      config: () =>
+        stubConfig({
+          maxTroops: () => 1000,
+          civilianBaseGoldAdditionRate: () => 5_000n,
+          marketIncomeBonus: () => 1_600n,
+          marketBonusBasisPoints: () => 3200,
+          enabledMarketCount: () => 4,
+          marketSlots: () => 5,
+        }),
+      updatesSinceLastTick: () => null,
+    } as unknown as GameView;
+    document.body.appendChild(panel);
+    panel.tick();
+    await panel.updateComplete;
+
+    const goldIndicators = panel.querySelectorAll(
+      '[aria-label*="Market income"]',
+    );
+    expect(goldIndicators).toHaveLength(2);
+    for (const indicator of goldIndicators) {
+      expect(indicator.getAttribute("aria-label")).toContain(
+        "Market income +16.0K/s (32% from 4/5 enabled Market slots)",
+      );
+      expect(indicator.getAttribute("tabindex")).toBe("0");
+    }
+    expect(panel.querySelector('[data-testid="market-income-row"]')).toBeNull();
   });
 });

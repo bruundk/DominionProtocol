@@ -1501,6 +1501,13 @@ export class PlayerImpl implements Player {
     if (unitType !== UnitType.MIRVWarhead && !this.isAlive()) {
       return false;
     }
+    if (
+      unitType === UnitType.Market &&
+      this.units(UnitType.Market).filter((market) => market.isActive())
+        .length >= this.mg.config().marketSlots(this)
+    ) {
+      return false;
+    }
     return true;
   }
 
@@ -1657,6 +1664,7 @@ export class PlayerImpl implements Player {
       case UnitType.SAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
+      case UnitType.Market:
         return this.landBasedStructureSpawn(targetTile, validTiles);
       default:
         assertNever(unitType);

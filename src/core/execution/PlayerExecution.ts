@@ -15,6 +15,7 @@ import {
   TileTraversalScratch,
 } from "../game/TileTraversalScratch";
 import { calculateBoundingBox, getMode, inscribed, simpleHash } from "../Util";
+import { ConstructionExecution } from "./ConstructionExecution";
 
 export class PlayerExecution implements Execution {
   private readonly ticksPerClusterCalc = 20;
@@ -95,6 +96,8 @@ export class PlayerExecution implements Execution {
     const goldFromWorkers = this.config.goldAdditionRate(this.player);
     this.player.addGold(goldFromWorkers);
 
+    this.maybeBuildBotMarket(ticks);
+
     // Record stats
     this.mg.stats().goldWork(this.player, goldFromWorkers);
 
@@ -127,6 +130,32 @@ export class PlayerExecution implements Execution {
           console.log(`player ${this.player.name()}, took ${end - start}ms`);
         }
       }
+    }
+  }
+
+  /**
+   * Tribe bots normally have no Cities. If they capture one, they make modest
+   * use of its Market capacity without spending their entire reserve.
+   */
+  private maybeBuildBotMarket(ticks: number): void {
+    if (this.player.type() !== PlayerType.Bot) return;
+    if ((ticks + simpleHash(this.player.id())) % 100 !== 0) return;
+    if (this.config.isUnitDisabled(UnitType.Market)) return;
+
+    const markets = this.player
+      .units(UnitType.Market)
+      .filter((market) => market.isActive()).length;
+    if (markets >= this.config.marketSlots(this.player)) return;
+
+    const cost = this.mg.unitInfo(UnitType.Market).cost(this.mg, this.player);
+    if (this.player.gold() < cost * 2n) return;
+
+    for (const tile of this.player.tiles()) {
+      if (this.player.canBuild(UnitType.Market, tile) === false) continue;
+      this.mg.addExecution(
+        new ConstructionExecution(this.player, UnitType.Market, tile),
+      );
+      return;
     }
   }
 

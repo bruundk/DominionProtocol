@@ -74,6 +74,16 @@ export class ControlPanel extends LitElement implements Controller {
 
   @state()
   private _gold: Gold;
+  @state()
+  private _baseCivilianIncome: Gold = 0n;
+  @state()
+  private _marketIncome: Gold = 0n;
+  @state()
+  private _marketBonusPercent = 0;
+  @state()
+  private _enabledMarkets = 0;
+  @state()
+  private _marketSlots = 0;
 
   @state()
   private _attackingTroops: number = 0;
@@ -155,6 +165,12 @@ export class ControlPanel extends LitElement implements Controller {
     const config = this.game.config();
     this._maxTroops = config.maxTroops(player);
     this._gold = player.gold();
+    this._baseCivilianIncome =
+      config.civilianBaseGoldAdditionRate(player) * 10n;
+    this._marketIncome = config.marketIncomeBonus(player) * 10n;
+    this._marketBonusPercent = config.marketBonusBasisPoints(player) / 100;
+    this._enabledMarkets = config.enabledMarketCount(player);
+    this._marketSlots = config.marketSlots(player);
     this._troops = player.troops();
     this._civilians = player.civilians();
     this._civilianCapacity = config.civilianCapacity(player);
@@ -581,6 +597,7 @@ export class ControlPanel extends LitElement implements Controller {
   }
 
   private renderDesktop() {
+    const goldDetails = this.goldDetails();
     return html`
       ${this.renderNotification()}
       <!-- Row 1: troop rate | troop bar | civilians | gold -->
@@ -623,6 +640,9 @@ export class ControlPanel extends LitElement implements Controller {
             "gold",
           )}"
           translate="no"
+          title=${goldDetails}
+          aria-label=${goldDetails}
+          tabindex="0"
         >
           ${this._goldGain !== null
             ? keyed(
@@ -709,6 +729,7 @@ export class ControlPanel extends LitElement implements Controller {
   }
 
   private renderMobile() {
+    const goldDetails = this.goldDetails();
     return html`
       ${this.renderNotification()}
       <div
@@ -725,6 +746,9 @@ export class ControlPanel extends LitElement implements Controller {
             "gold",
           )}"
           translate="no"
+          title=${goldDetails}
+          aria-label=${goldDetails}
+          tabindex="0"
         >
           ${this._goldGain !== null
             ? keyed(
@@ -796,6 +820,17 @@ export class ControlPanel extends LitElement implements Controller {
         </div>
       </div>
     `;
+  }
+
+  private goldDetails(): string {
+    return translateText("control_panel.gold_details", {
+      gold: renderNumber(this._gold),
+      base: renderNumber(this._baseCivilianIncome),
+      market: renderNumber(this._marketIncome),
+      bonus: this._marketBonusPercent,
+      enabled: this._enabledMarkets,
+      slots: this._marketSlots,
+    });
   }
 
   render() {

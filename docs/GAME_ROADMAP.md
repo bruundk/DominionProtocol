@@ -75,25 +75,25 @@ total-population accounting and new buildings remain separate future milestones.
 
 ### Confirmed design
 
-- [ ] Add one total population value for each player
-- [ ] Divide population into civilians and active troops
-- [ ] Keep troops in one shared national army
+- [x] Add one total population value for each player
+- [x] Divide population into civilians and active troops
+- [x] Keep troops in one shared national army
 - [ ] Do not store separate armies in individual territories
-- [ ] Make civilians generate money
+- [x] Make civilians generate money
 - [ ] Make active troops require upkeep
-- [ ] Make military casualties reduce total population
-- [ ] Add gradual population recovery and growth
-- [ ] Display civilians, troops and money clearly in the interface
+- [x] Make military casualties reduce total population
+- [x] Add gradual population recovery and growth
+- [x] Display civilians, troops and money clearly in the interface
 
 ### Mobilisation
 
-- [ ] Add a national mobilisation percentage slider
-- [ ] Make civilian-to-troop conversion immediate
-- [ ] Keep the existing attack-percentage control separate
+- [x] Add a national mobilisation percentage slider
+- [x] Make civilian-to-troop conversion immediate
+- [x] Keep the existing attack-percentage control separate
 - [ ] Make mobilisation increases cost money
-- [ ] Allow demobilisation to return surviving troops to civilian life
+- [x] Allow demobilisation to return surviving troops to civilian life
 - [ ] Add a short mobilisation cooldown if testing shows it is necessary
-- [ ] Teach AI players to manage mobilisation
+- [x] Teach AI players to manage mobilisation
 
 ### Important distinction
 
@@ -106,11 +106,11 @@ The two percentage controls must remain separate:
 
 ## Phase 3: Economy
 
-- [ ] Use money as the primary economic resource
-- [ ] Generate income primarily from civilians
-- [ ] Give buildings construction costs
+- [x] Use money as the primary economic resource
+- [x] Generate income primarily from civilians
+- [x] Give buildings construction costs
 - [ ] Give military units and advanced weapons upkeep costs
-- [ ] Display current money and income per second
+- [x] Display current money and civilian/Market income per second in tooltips
 - [ ] Display major expenses and military upkeep
 - [ ] Prevent players from earning maximum income and instantly mobilising for free
 - [ ] Balance economic investment against immediate expansion
@@ -145,7 +145,7 @@ These systems may only be reconsidered if the basic economy remains too simple.
 
 These are candidates, not all confirmed:
 
-- [ ] Market: improves money income
+- [x] Market: improves civilian passive income with City-level slots
 - [ ] Housing: improves population growth or capacity
 - [ ] Hospital: improves recovery after population losses
 
@@ -154,6 +154,19 @@ These are candidates, not all confirmed:
 - [x] Do not use complicated residential, commercial and industrial district systems
 - [ ] Limit civilian city choices to approximately three
 - [ ] Make every building's purpose understandable from one short description
+
+### Market milestone
+
+- [x] Add Market as an original economic structure with its own SVG icon
+- [x] Give each completed City level one Market slot
+- [x] Add +10% civilian income for the first three Markets and diminishing returns thereafter
+- [x] Disable newest excess Markets without deleting them when City capacity falls
+- [x] Keep all non-civilian gold sources outside the Market multiplier
+- [x] Add conservative Nation and bot construction behavior
+- [x] Add translated hotbar and compact gold-income tooltip details
+- [x] Test construction, slots, income, capture, destruction, determinism and responsive HUD behavior
+
+See [Market rules](MARKETS.md).
 
 ---
 
